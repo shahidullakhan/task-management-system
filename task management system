@@ -1,0 +1,289 @@
+import java.io.*;
+import java.util.*;
+
+enum Priority {
+    LOW, MEDIUM, HIGH
+}
+
+class Task {
+    private String title;
+    private String description;
+    private Priority priority;
+    private boolean isCompleted;
+
+    public Task(String title, String description, Priority priority) {
+        this.title = title;
+        this.description = description;
+        this.priority = priority;
+        this.isCompleted = false;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void completeTask() {
+        this.isCompleted = true;
+    }
+
+    public void uncompleteTask() {
+        this.isCompleted = false;
+    }
+
+    @Override
+    public String toString() {
+        return "Title: " + title + ", Description: " + description + ", Priority: " + priority + ", Completed: " + isCompleted;
+    }
+}
+
+class TaskManager {
+    private List<Task> tasks;
+    private static final String FILE_PATH = "tasks.txt";
+
+    public TaskManager() {
+        tasks = new ArrayList<>();
+    }
+
+    public void addTask(Task task) {
+        tasks.add(task);
+    }
+
+    public void removeTask(String title) {
+        tasks.removeIf(task -> task.getTitle().equalsIgnoreCase(title));
+    }
+
+    public void markTaskAsCompleted(String title) {
+        Task task = findTaskByTitle(title);
+        if (task != null) {
+            task.completeTask();
+        } else {
+            System.out.println("Task not found.");
+        }
+    }
+
+    public void unmarkTaskAsCompleted(String title) {
+        Task task = findTaskByTitle(title);
+        if (task != null) {
+            task.uncompleteTask();
+        } else {
+            System.out.println("Task not found.");
+        }
+    }
+
+    public Task findTaskByTitle(String title) {
+        for (Task task : tasks) {
+            if (task.getTitle().equalsIgnoreCase(title)) {
+                return task;
+            }
+        }
+        return null;
+    }
+
+    public void listAllTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("No tasks available.");
+            return;
+        }
+        for (Task task : tasks) {
+            System.out.println(task);
+        }
+    }
+
+    public void listTasksByPriority(Priority priority) {
+        boolean found = false;
+        for (Task task : tasks) {
+            if (task.getPriority() == priority) {
+                System.out.println(task);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No tasks with " + priority + " priority.");
+        }
+    }
+
+    public void listIncompleteTasks() {
+        boolean found = false;
+        for (Task task : tasks) {
+            if (!task.isCompleted()) {
+                System.out.println(task);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No incomplete tasks.");
+        }
+    }
+
+    public void listCompletedTasks() {
+        boolean found = false;
+        for (Task task : tasks) {
+            if (task.isCompleted()) {
+                System.out.println(task);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("No completed tasks.");
+        }
+    }
+
+    public void saveTasks() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
+            for (Task task : tasks) {
+                writer.write(task.getTitle() + "," + task.getDescription() + "," + task.getPriority() + "," + task.isCompleted());
+                writer.newLine();
+            }
+            System.out.println("Tasks saved successfully.");
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    public void loadTasks() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] taskData = line.split(",");
+                String title = taskData[0];
+                String description = taskData[1];
+                Priority priority = Priority.valueOf(taskData[2]);
+                boolean isCompleted = Boolean.parseBoolean(taskData[3]);
+
+                Task task = new Task(title, description, priority);
+                if (isCompleted) {
+                    task.completeTask();
+                }
+                tasks.add(task);
+            }
+            System.out.println("Tasks loaded successfully.");
+        } catch (IOException e) {
+            System.out.println("Error loading tasks: " + e.getMessage());
+        }
+    }
+
+    public void sortTasksByPriority() {
+        tasks.sort(Comparator.comparing(Task::getPriority));
+    }
+}
+
+public class TaskManagementApp {
+    private static TaskManager taskManager;
+
+    public static void main(String[] args) {
+        taskManager = new TaskManager();
+        Scanner scanner = new Scanner(System.in);
+
+        // Load tasks from file
+        taskManager.loadTasks();
+
+        int choice;
+        do {
+            System.out.println("\nTask Management System");
+            System.out.println("1. Add a Task");
+            System.out.println("2. Remove a Task");
+            System.out.println("3. Mark Task as Completed");
+            System.out.println("4. Unmark Task as Completed");
+            System.out.println("5. List All Tasks");
+            System.out.println("6. List Incomplete Tasks");
+            System.out.println("7. List Completed Tasks");
+            System.out.println("8. List Tasks by Priority");
+            System.out.println("9. Sort Tasks by Priority");
+            System.out.println("10. Save Tasks and Exit");
+            System.out.print("Enter your choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();  // Consume newline
+
+            switch (choice) {
+                case 1:
+                    addTask(scanner);
+                    break;
+                case 2:
+                    removeTask(scanner);
+                    break;
+                case 3:
+                    markTaskAsCompleted(scanner);
+                    break;
+                case 4:
+                    unmarkTaskAsCompleted(scanner);
+                    break;
+                case 5:
+                    taskManager.listAllTasks();
+                    break;
+                case 6:
+                    taskManager.listIncompleteTasks();
+                    break;
+                case 7:
+                    taskManager.listCompletedTasks();
+                    break;
+                case 8:
+                    listTasksByPriority(scanner);
+                    break;
+                case 9:
+                    taskManager.sortTasksByPriority();
+                    System.out.println("Tasks sorted by priority.");
+                    break;
+                case 10:
+                    taskManager.saveTasks();
+                    System.out.println("Tasks saved. Exiting...");
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } while (choice != 10);
+
+        scanner.close();
+    }
+
+    private static void addTask(Scanner scanner) {
+        System.out.print("Enter task title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter task description: ");
+        String description = scanner.nextLine();
+        System.out.print("Enter task priority (LOW, MEDIUM, HIGH): ");
+        String priorityInput = scanner.nextLine();
+        Priority priority = Priority.valueOf(priorityInput.toUpperCase());
+
+        Task task = new Task(title, description, priority);
+        taskManager.addTask(task);
+        System.out.println("Task added.");
+    }
+
+    private static void removeTask(Scanner scanner) {
+        System.out.print("Enter task title to remove: ");
+        String title = scanner.nextLine();
+        taskManager.removeTask(title);
+        System.out.println("Task removed.");
+    }
+
+    private static void markTaskAsCompleted(Scanner scanner) {
+        System.out.print("Enter task title to mark as completed: ");
+        String title = scanner.nextLine();
+        taskManager.markTaskAsCompleted(title);
+    }
+
+    private static void unmarkTaskAsCompleted(Scanner scanner) {
+        System.out.print("Enter task title to unmark as completed: ");
+        String title = scanner.nextLine();
+        taskManager.unmarkTaskAsCompleted(title);
+    }
+
+    private static void listTasksByPriority(Scanner scanner) {
+        System.out.print("Enter priority to list tasks (LOW, MEDIUM, HIGH): ");
+        String priorityInput = scanner.nextLine();
+        Priority priority = Priority.valueOf(priorityInput.toUpperCase());
+        taskManager.listTasksByPriority(priority);
+    }
+}
